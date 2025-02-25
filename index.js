@@ -4,6 +4,7 @@ require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app=express();
 const stripe=require('stripe')(process.env.STRIPE_SECRET_KEY)
+const SSLCommerzPayment = require('sslcommerz-lts')
 const port =process.env.PORT || 5000;
 
 const corsOption = {
@@ -23,6 +24,31 @@ app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.uslpn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
+
+ 
+// Store ID: bistr67ab628c506cc
+// Store Password (API/Secret Key): bistr67ab628c506cc@ssl
+
+
+// Merchant Panel URL: https://sandbox.sslcommerz.com/manage/ (Credential as you inputted in the time of registration)
+
+
+ 
+// Store name: testbistrngzj
+// Registered URL: www.bistroboss.com
+// Session API to generate transaction: https://sandbox.sslcommerz.com/gwprocess/v3/api.php
+// Validation API: https://sandbox.sslcommerz.com/validator/api/validationserverAPI.php?wsdl
+// Validation API (Web Service) name: https://sandbox.sslcommerz.com/validator/api/validationserverAPI.php
+ 
+// You may check our plugins available for multiple carts and libraries: https://github.com/sslcommerz
+
+
+
+
+
+
+
+
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
@@ -31,6 +57,13 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   }
 });
+
+
+const store_id = process.env.STOREID;
+const store_passwd = process.env.STOREPASS;
+const is_live = false //true for live, false for sandbox
+
+
 
 async function run() {
   try {
@@ -141,6 +174,111 @@ app.post('/payments',async(req,res)=>{
 
 
 
+
+
+
+
+// ssLC
+app.post('/order', async (req, res) => {
+  // Generate unique transaction ID
+  const transactionId = new ObjectId().toString();
+
+  // Extract payment details from request body
+  const { email, name, amount, campaignTitle, campaignId, thumbnail } = req.body;
+  const payDetails=req.body;
+
+  const data = {
+    total_amount: parseFloat(amount), // Ensure amount is a number
+    currency: "BDT",
+    tran_id: transactionId, // Unique transaction ID
+    success_url: `http://localhost:5000/payment/success/${transactionId}`,
+    fail_url: `http://localhost:5000/payment/fail/${transactionId}`,
+    cancel_url: "http://localhost:3030/cancel",
+    ipn_url: "http://localhost:3030/ipn",
+    shipping_method: "Courier",
+    product_name: campaignTitle || "Donation",
+    product_category: "Donation",
+    product_profile: "general",
+    cus_name: name || "Anonymous",
+    cus_email: email || "unknown@example.com",
+    cus_add1: "Dhaka",
+    cus_add2: "Dhaka",
+    cus_city: "Dhaka",
+    cus_state: "Dhaka",
+    cus_postcode: "1000",
+    cus_country: "Bangladesh",
+    cus_phone: "01711111111",
+    cus_fax: "01711111111",
+    ship_name: name || "Anonymous",
+    ship_add1: "Dhaka",
+    ship_add2: "Dhaka",
+    ship_city: "Dhaka",
+    ship_state: "Dhaka",
+    ship_postcode: "1000",
+    ship_country: "Bangladesh",
+  };
+
+  console.log(data);
+
+  const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
+  sslcz.init(data).then((apiResponse) => {
+    // Redirect the user to payment gateway
+    let GatewayPageURL = apiResponse.GatewayPageURL;
+    res.send({ url: GatewayPageURL });
+const finalpay= {
+  email, name, amount, campaignTitle, campaignId, thumbnail,
+  paidStatus:false,
+  TranstionID: transactionId,
+
+}
+const result=paymentCollection.insertOne(finalpay);
+
+
+    console.log('Redirecting to: ', GatewayPageURL);
+  });
+});
+
+
+
+// ✅ Fix: Move this route outside of '/order' and ensure correct path
+app.post('/payment/success/:tranId', async (req, res) => {
+  console.log("Transaction ID:", req.params.tranId);
+
+  const result=await paymentCollection.updateOne({TranstionID:req.params.tranId},{$set:{
+    paidStatus:true,
+  }
+
+
+  })
+  if(result.modifiedCount>0)
+  {
+    res.redirect(`http://localhost:5173/payment/success/${req.params.tranId}`)
+
+  }
+
+
+});
+
+
+
+app.post('/payment/fail/:tranId', async (req, res) => {
+  console.log("Transaction ID:", req.params.tranId);
+
+  const result=await paymentCollection.deleteOne({TranstionID:req.params.tranId})
+  
+
+ if(result.deletedCount>0)
+  {
+    res.redirect(`http://localhost:5173/payment/fail/${req.params.tranId}`)
+
+  }
+
+
+});
+
+
+
+
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
@@ -148,7 +286,7 @@ app.post('/payments',async(req,res)=>{
   }
 }
 run().catch(console.dir);
-
+ 
 
 
 
