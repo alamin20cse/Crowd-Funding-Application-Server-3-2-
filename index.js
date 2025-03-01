@@ -88,6 +88,24 @@ async function run() {
       res.send(result);
   
   })
+  // get all users
+  app.get('/allusers',async(req,res)=>{
+    const cursor=userCollection.find();
+    const result=await cursor.toArray();
+    res.send(result);
+})
+
+  // get user logged
+  app.get('/users',async(req,res)=>{
+    const email=req.query.email;
+    const query={email:email};
+
+    const result=await userCollection.find(query).toArray();
+    res.send(result);
+})
+
+
+
 
   
   app.post('/campign',async(req,res)=>{
@@ -102,8 +120,6 @@ app.get('/allcampign',async(req,res)=>{
     const cursor=campignCollection.find();
     const result=await cursor.toArray();
     res.send(result);
-
-
 })
 
  // for update
