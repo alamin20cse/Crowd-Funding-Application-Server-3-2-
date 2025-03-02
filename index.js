@@ -285,6 +285,17 @@ app.get('/payments',async(req,res)=>{
 })
 
 
+  // get user logged payment
+  app.get('/mypayments',async(req,res)=>{
+    const email=req.query.email;
+    const query={email:email};
+
+    const result=await paymentCollection.find(query).toArray();
+    res.send(result);
+})
+
+
+
 
 
 
