@@ -88,12 +88,52 @@ async function run() {
       res.send(result);
   
   })
-  // get all users
+  // get all users only for admin
   app.get('/allusers',async(req,res)=>{
     const cursor=userCollection.find();
     const result=await cursor.toArray();
     res.send(result);
 })
+
+
+
+      // // for  specific id data of user
+      // app.get('/allusers/:id', async (req, res) => {
+      //   const id = req.params.id;
+      //   const query = { _id: new ObjectId(id) };
+      //   const result = await userCollection.findOne(query);
+      //   res.send(result);
+      // });
+
+
+      
+      app.patch("/allusers/:id", async (req, res) => {
+        const { id } = req.params;
+        const { status } = req.body;
+    
+        try {
+            const result = await userCollection.updateOne({ _id: new ObjectId(id) }, { $set: { status } });
+            res.json({ success: true, message: "Status updated", result });
+        } catch (error) {
+            res.status(500).json({ success: false, message: "Failed to update status", error });
+        }
+    });
+
+
+    app.patch("/allusers/:id/role", async (req, res) => {
+      const { id } = req.params;
+      const { role } = req.body;
+  
+      try {
+          const result = await userCollection.updateOne({ _id: new ObjectId(id) }, { $set: { role } });
+          res.json({ success: true, message: "Role updated", result });
+      } catch (error) {
+          res.status(500).json({ success: false, message: "Failed to update role", error });
+      }
+  });
+
+
+
 
   // get user logged
   app.get('/users',async(req,res)=>{
@@ -175,6 +215,14 @@ app.post('/payments',async(req,res)=>{
   const result=await paymentCollection.insertOne(payment);
   res.send(result);
 
+})
+
+// get all payment information for admin only
+// get all campains
+app.get('/payments',async(req,res)=>{
+  const cursor=paymentCollection.find();
+  const result=await cursor.toArray();
+  res.send(result);
 })
 
 
