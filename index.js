@@ -172,6 +172,19 @@ app.get('/allcampign',async(req,res)=>{
 
 
 
+  
+
+  // get user logged
+  app.get('/mycampign',async(req,res)=>{
+    const email=req.query.email;
+    const query={email:email};
+
+    const result=await campignCollection.find(query).toArray();
+    res.send(result);
+})
+
+
+
 
 
 
