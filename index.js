@@ -162,13 +162,59 @@ app.get('/allcampign',async(req,res)=>{
     res.send(result);
 })
 
- // for update
+    //  delete campaign
+    app.delete('/campaign/:id',async(req,res)=>{
+      const id=req.params.id;
+      const query={_id:new ObjectId(id)} ;
+      const result=await campignCollection.deleteOne(query);
+      res.send(result);
+
+    })
+
+
+
+
+
+
+ // for  specific campign
  app.get('/allcampign/:id', async (req, res) => {
     const id = req.params.id;
     const query = { _id: new ObjectId(id) };
     const result = await campignCollection.findOne(query);
     res.send(result);
   });
+  
+ 
+
+  app.put('/updateCampaign/:id', async (req, res) => {
+    const id = req.params.id;
+    const filter = { _id: new ObjectId(id) };
+    const updatedCampaign = req.body;
+
+    // Ensure that all fields are set correctly, including status
+    const campaign = {
+        $set: {
+            title: updatedCampaign.title,
+            description: updatedCampaign.description,
+            type: updatedCampaign.type,
+            minimumDonation: updatedCampaign.minimumDonation,
+            date: updatedCampaign.date,
+            thumbnail: updatedCampaign.thumbnail,
+            status: updatedCampaign.status || 'defaultStatus', // Default value for status
+            email: updatedCampaign.userEmail || '', // Ensure email is handled correctly
+        }
+    };
+
+    try {
+        const result = await campignCollection.updateOne(filter, campaign);
+        res.send(result);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Error updating the campaign');
+    }
+});
+
+
 
 
 
